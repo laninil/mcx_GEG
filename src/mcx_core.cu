@@ -1894,11 +1894,15 @@ __global__ void mcx_main_loop(uint media[], OutputType field[], float genergy[],
                     } else {
                         tmp0 = (v.nscat > gcfg->gscatter) ? 0.f : prop.g;
 
-                        /** Here we use Henyey-Greenstein Phase Function, "Handbook of Optical Biomedical Diagnostics",2002,Chap3,p234, also see Boas2002 */
+                        /** Here we use Gegenbauer Phase Function, Calabro K W, Cassarly W (2015) "Modeling scattering in turbid media using the Gegenbauer phase function"; "Handbook of Optical Biomedical Diagnostics",2002,Chap3,p234, also see Boas2002 */
                         if (fabsf(tmp0) > EPS) { //< if prop.g is too small, the distribution of theta is bad
-                            tmp0 = (1.f - prop.g * prop.g) / (1.f - prop.g + 2.f * prop.g * rand_next_zangle(t));
-                            tmp0 *= tmp0;
-                            tmp0 = (1.f + prop.g * prop.g - tmp0) / (2.f * prop.g);
+                            
+                            float alpha = gcfg->alpha;
+                            float gamma = gcfg->gamma;
+                            
+                            tmp0 = pow(rand_next_zangle(t)*(pow(1.f + gamma, 2.f * alpha) - pow(1.f - gamma, 2.f * alpha))/pow(1.f - gamma * gamma, 2.f * alpha) + pow(1.f + gamma, -2.f * alpha), 1.f / alpha);
+                            tmp0 = 1.f + gamma * gamma - 1.f / tmp0;
+                            tmp0 = tmp0 / (2.f * gamma);
 
                             // in early CUDA, when ran=1, CUDA gives 1.000002 for tmp0 which produces nan later
                             // detected by Ocelot,thanks to Greg Diamos,see http://bit.ly/cR2NMP
@@ -2785,7 +2789,7 @@ void mcx_run_simulation(Config* cfg, GPUInfo* gpu) {
                       cfg->maxdetphoton * hostdetreclen, cfg->seed, (uint)cfg->outputtype, 0, 0, cfg->faststep,
                       cfg->debuglevel, cfg->savedetflag, hostdetreclen, partialdata, w0offset, cfg->mediabyte,
                       (uint)cfg->maxjumpdebug, cfg->gscatter, is2d, cfg->replaydet, cfg->srcnum,
-                      cfg->nphase, cfg->nphase + (cfg->nphase & 0x1), cfg->nangle, cfg->nangle + (cfg->nangle & 0x1), cfg->omega
+                      cfg->nphase, cfg->nphase + (cfg->nphase & 0x1), cfg->nangle, cfg->nangle + (cfg->nangle & 0x1), cfg->omega, cfg->gamma, cfg->alpha
                      };
 
     if (param.isatomic) {

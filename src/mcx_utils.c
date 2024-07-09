@@ -336,6 +336,8 @@ void mcx_initcfg(Config* cfg) {
     cfg->gscatter = 1e9;   /** by default, honor anisotropy for all scattering, use --gscatter to reduce it */
     cfg->nphase = 0;
     cfg->invcdf = NULL;
+    cfg->gamma = 1.f;
+    cfg->alpha = 1.f;
     cfg->nangle = 0;
     cfg->angleinvcdf = NULL;
     cfg->srcid = 0;
@@ -3712,6 +3714,14 @@ void mcx_validatecfg(Config* cfg, float* detps, int dimdetps[2], int seedbyte) {
                 cfg->srcdata[i].srcpos.z--;
             }
         }
+    }
+
+    if (cfg->gamma < -1.f) {
+        cfg->gamma = -1.f;
+    }
+
+    if (cfg->alpha < -0.5f) {
+        cfg->alpha = -0.5f;
     }
 
     if (cfg->tstep == 0.f) {
